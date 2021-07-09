@@ -103,6 +103,7 @@ TEMPLATES = [
                 'pydotorg.context_processors.url_name',
                 'pydotorg.context_processors.get_host_with_scheme',
                 'pydotorg.context_processors.blog_url',
+                'pydotorg.context_processors.user_nav_bar_links',
             ],
         },
     },
@@ -155,6 +156,7 @@ INSTALLED_APPS = [
     'ordered_model',
     'widget_tweaks',
     'django_countries',
+    'easy_pdf',
 
     'users',
     'boxes',
@@ -235,6 +237,7 @@ PYTHON_BLOG_URL = "https://blog.python.org"
 MAILING_LIST_PSF_MEMBERS = "psf-members-announce-request@python.org"
 
 ### PEP Repo Location
+PEP_REPO_PATH = None
 PEP_ARTIFACT_URL = 'https://pythondotorg-assets-staging.s3.amazonaws.com/fake-peps.tar.gz'
 
 ### Fastly ###

@@ -6,7 +6,6 @@ from django.test import TestCase
 from sponsors.forms import (
     SponsorshiptBenefitsForm,
     SponsorshipApplicationForm,
-    SponsorContact,
     Sponsor,
     SponsorContactFormSet,
     SponsorBenefitAdminInlineForm,
@@ -27,21 +26,36 @@ class SponsorshiptBenefitsFormTests(TestCase):
         self.program_2_benefits = baker.make(
             SponsorshipBenefit, program=self.wk, _quantity=5
         )
+        self.package = baker.make("sponsors.SponsorshipPackage")
+        self.package.benefits.add(*self.program_1_benefits)
+        self.package.benefits.add(*self.program_2_benefits)
+
+        # packages without associated packages
+        self.add_ons = baker.make(SponsorshipBenefit, program=self.psf, _quantity=2)
 
     def test_benefits_organized_by_program(self):
+        form = SponsorshiptBenefitsForm()
+
+        choices = list(form.fields["add_ons_benefits"].choices)
+
+        self.assertEqual(len(self.add_ons), len(choices))
+        for benefit in self.add_ons:
+            self.assertIn(benefit.id, [c[0] for c in choices])
+
+    def test_specific_field_to_select_add_ons(self):
         form = SponsorshiptBenefitsForm()
 
         field1, field2 = sorted(form.benefits_programs, key=lambda f: f.name)
 
         self.assertEqual("benefits_psf", field1.name)
-        self.assertEqual("PSF Sponsorship Benefits", field1.label)
+        self.assertEqual("PSF Benefits", field1.label)
         choices = list(field1.field.choices)
         self.assertEqual(len(self.program_1_benefits), len(choices))
         for benefit in self.program_1_benefits:
             self.assertIn(benefit.id, [c[0] for c in choices])
 
         self.assertEqual("benefits_working_group", field2.name)
-        self.assertEqual("Working Group Sponsorship Benefits", field2.label)
+        self.assertEqual("Working Group Benefits", field2.label)
         choices = list(field2.field.choices)
         self.assertEqual(len(self.program_2_benefits), len(choices))
         for benefit in self.program_2_benefits:
@@ -83,6 +97,7 @@ class SponsorshiptBenefitsFormTests(TestCase):
     def test_invalid_form_if_any_conflict(self):
         benefit_1 = baker.make("sponsors.SponsorshipBenefit", program=self.wk)
         benefit_1.conflicts.add(*self.program_1_benefits)
+        self.package.benefits.add(benefit_1)
 
         data = {"benefits_psf": [b.id for b in self.program_1_benefits]}
         form = SponsorshiptBenefitsForm(data=data)
@@ -235,6 +250,7 @@ class SponsorshipApplicationFormTests(TestCase):
     ):
         self.data["description"] = "Important company"
         self.data["landing_page_url"] = "https://companyx.com"
+        self.data["twitter_handle"] = "@companyx"
         self.files["print_logo"] = get_static_image_file_as_upload(
             "psf-logo_print.png", "logo_print.png"
         )
@@ -248,6 +264,7 @@ class SponsorshipApplicationFormTests(TestCase):
         self.assertTrue(sponsor.print_logo)
         self.assertFalse(form.user_with_previous_sponsors)
         self.assertEqual(sponsor.landing_page_url, "https://companyx.com")
+        self.assertEqual(sponsor.twitter_handle, "@companyx")
 
     def test_use_previous_user_sponsor(self):
         contact = baker.make(SponsorContact, user__email="foo@foo.com")
